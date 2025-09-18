@@ -1,0 +1,256 @@
+{
+  "video_info": {
+    "path": "uploads\\session-1758179419091.webm",
+    "duration_seconds": 90.2,
+    "total_frames": 451,
+    "fps": 5.0,
+    "processed_at": "2025-09-18T12:40:58.086339"
+  },
+  "events": [
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 4.8,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.5658158659934998
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 30.6,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.43135538697242737
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 55.2,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.4616580903530121
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 60.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 74.8,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 81.4,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    }
+  ],
+  "summary": {
+    "total_events": 39,
+    "critical_events": 39,
+    "warning_events": 0,
+    "object_detections": 3,
+    "face_events": 36,
+    "focus_events": 0
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "video_info": {
+    "path": "uploads\\session-1758179841231.webm",
+    "duration_seconds": 158.0,
+    "total_frames": 790,
+    "fps": 5.0,
+    "processed_at": "2025-09-18T12:48:21.611627"
+  },
+  "events": [
+    {
+      "type": "focus_lost",
+      "timestamp": 30.2,
+      "severity": "warning",
+      "message": "User not looking at screen for 2.0 seconds"
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 56.6,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.8965364098548889
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 61.4,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "focus_lost",
+      "timestamp": 99.4,
+      "severity": "warning",
+      "message": "User not looking at screen for 2.0 seconds"
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 106.8,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.7024129033088684
+    },
+    {
+      "type": "multiple_faces",
+      "timestamp": 107.0,
+      "severity": "critical",
+      "message": "Multiple faces detected (2)"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 127.4,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "multiple_faces",
+      "timestamp": 137.0,
+      "severity": "critical",
+      "message": "Multiple faces detected (2)"
+    }
+  ],
+  "summary": {
+    "total_events": 8,
+    "critical_events": 6,
+    "warning_events": 2,
+    "object_detections": 2,
+    "face_events": 4,
+    "focus_events": 2
+  }
+}

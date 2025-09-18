@@ -1,0 +1,33 @@
+{
+  "video_info": {
+    "path": "uploads\\session-1758179656492.webm",
+    "duration_seconds": 138.4,
+    "total_frames": 692,
+    "fps": 5.0,
+    "processed_at": "2025-09-18T12:44:59.035950"
+  },
+  "events": [
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 56.8,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.47097325325012207
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 109.4,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.6643633842468262
+    }
+  ],
+  "summary": {
+    "total_events": 2,
+    "critical_events": 2,
+    "warning_events": 0,
+    "object_detections": 2,
+    "face_events": 0,
+    "focus_events": 0
+  }
+}

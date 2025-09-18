@@ -125,98 +125,205 @@ class VideoProctoringAnalyzer:
                 'timestamp': self.current_frame / self.fps
             }
     
+    # def update_object_tracking(self, detections: List[Dict[str, Any]]):
+    #     """Track persistent object detections"""
+    #     current_time = self.current_frame / self.fps
+        
+    #     # Update existing detections
+    #     for obj_type in list(self.object_detections.keys()):
+    #         self.object_detections[obj_type]['last_seen'] = current_time
+        
+    #     # Add new detections
+    #     for detection in detections:
+    #         obj_type = detection['class']
+    #         if obj_type not in self.object_detections:
+    #             self.object_detections[obj_type] = {
+    #                 'first_seen': current_time,
+    #                 'last_seen': current_time,
+    #                 'alerted': False
+    #             }
+    #         else:
+    #             self.object_detections[obj_type]['last_seen'] = current_time
+        
+    #     # Check for persistent objects that should trigger alerts
+    #     for obj_type, info in self.object_detections.items():
+    #         if not info['alerted'] and (current_time - info['first_seen']) > 1.0:  # 1 second
+    #             self.events.append({
+    #                 'type': f'{obj_type.replace(" ", "_")}_detected',
+    #                 'timestamp': info['first_seen'],
+    #                 'severity': 'critical',
+    #                 'message': f'{obj_type.title()} detected in frame',
+    #                 'confidence': max([d['confidence'] for d in detections if d['class'] == obj_type])
+    #             })
+    #             info['alerted'] = True
     def update_object_tracking(self, detections: List[Dict[str, Any]]):
-        """Track persistent object detections"""
+        """Track persistent object detections more robustly"""
         current_time = self.current_frame / self.fps
-        
-        # Update existing detections
-        for obj_type in list(self.object_detections.keys()):
-            self.object_detections[obj_type]['last_seen'] = current_time
-        
-        # Add new detections
+
+        # Add/update detections from the current frame
         for detection in detections:
             obj_type = detection['class']
+            
             if obj_type not in self.object_detections:
+                # First time seeing this object type
                 self.object_detections[obj_type] = {
                     'first_seen': current_time,
                     'last_seen': current_time,
-                    'alerted': False
+                    'alerted': False,
+                    'confidence': detection['confidence']  # Store initial confidence
                 }
             else:
+                # Object already being tracked, update its last_seen time
                 self.object_detections[obj_type]['last_seen'] = current_time
-        
+                # Optionally, update to the highest confidence score seen so far
+                self.object_detections[obj_type]['confidence'] = max(
+                    self.object_detections[obj_type].get('confidence', 0), 
+                    detection['confidence']
+                )
+
         # Check for persistent objects that should trigger alerts
         for obj_type, info in self.object_detections.items():
-            if not info['alerted'] and (current_time - info['first_seen']) > 1.0:  # 1 second
+            # An object is considered 'persistent' if it has been seen for longer than the threshold
+            is_persistent = (info['last_seen'] - info['first_seen']) > 1.0 # Using 1 second threshold
+
+            if not info['alerted'] and is_persistent:
                 self.events.append({
                     'type': f'{obj_type.replace(" ", "_")}_detected',
                     'timestamp': info['first_seen'],
                     'severity': 'critical',
                     'message': f'{obj_type.title()} detected in frame',
-                    'confidence': max([d['confidence'] for d in detections if d['class'] == obj_type])
+                    'confidence': info.get('confidence', 0)  # Use the stored confidence
                 })
                 info['alerted'] = True
-    
+        
+        # --- Optional Cleanup ---
+        # To prevent the dictionary from growing forever, you can remove objects
+        # that have not been seen for a long time (e.g., 5 seconds).
+        objects_to_remove = []
+        for obj_type, info in self.object_detections.items():
+            if (current_time - info['last_seen']) > 5.0:
+                objects_to_remove.append(obj_type)
+        
+        for obj_type in objects_to_remove:
+            del self.object_detections[obj_type]
+    # def update_face_tracking(self, face_info: Dict[str, Any]):
+    #     """Track face presence and focus over time"""
+    #     current_time = face_info['timestamp']
+        
+    #     # Face absent tracking
+    #     if not face_info['has_face']:
+    #         if self.face_absent_start is None:
+    #             self.face_absent_start = current_time
+    #         elif (current_time - self.face_absent_start) > self.FACE_ABSENT_THRESHOLD:
+    #             # Check if we haven't already logged this absence
+    #             recent_absence = any(
+    #                 e['type'] == 'face_absent' and 
+    #                 (current_time - e['timestamp']) < 5.0
+    #                 for e in self.events
+    #             )
+    #             if not recent_absence:
+    #                 self.events.append({
+    #                     'type': 'face_absent',
+    #                     'timestamp': self.face_absent_start,
+    #                     'severity': 'critical',
+    #                     'message': f'No face detected for {self.FACE_ABSENT_THRESHOLD} seconds'
+    #                 })
+    #     else:
+    #         self.face_absent_start = None
+        
+    #     # Multiple faces tracking
+    #     if face_info['multiple_faces']:
+    #         recent_multiple = any(
+    #             e['type'] == 'multiple_faces' and 
+    #             (current_time - e['timestamp']) < 5.0
+    #             for e in self.events
+    #         )
+    #         if not recent_multiple:
+    #             self.events.append({
+    #                 'type': 'multiple_faces',
+    #                 'timestamp': current_time,
+    #                 'severity': 'critical',
+    #                 'message': f'Multiple faces detected ({face_info["face_count"]})'
+    #             })
+        
+    #     # Focus tracking
+    #     if not face_info['is_focused'] and face_info['has_face']:
+    #         if self.focus_lost_start is None:
+    #             self.focus_lost_start = current_time
+    #         elif (current_time - self.focus_lost_start) > self.FOCUS_LOST_THRESHOLD:
+    #             recent_focus_lost = any(
+    #                 e['type'] == 'focus_lost' and 
+    #                 (current_time - e['timestamp']) < 5.0
+    #                 for e in self.events
+    #             )
+    #             if not recent_focus_lost:
+    #                 self.events.append({
+    #                     'type': 'focus_lost',
+    #                     'timestamp': self.focus_lost_start,
+    #                     'severity': 'warning',
+    #                     'message': f'User not looking at screen for {self.FOCUS_LOST_THRESHOLD} seconds'
+    #                 })
+    #     else:
+    #         self.focus_lost_start = None
     def update_face_tracking(self, face_info: Dict[str, Any]):
-        """Track face presence and focus over time"""
+        """Track face presence and focus over time with improved state management."""
         current_time = face_info['timestamp']
         
-        # Face absent tracking
+        # --- Face Absent Tracking ---
         if not face_info['has_face']:
             if self.face_absent_start is None:
+                # This is the moment the face was first lost
                 self.face_absent_start = current_time
+            
+            # Check if the absence has crossed the threshold
             elif (current_time - self.face_absent_start) > self.FACE_ABSENT_THRESHOLD:
-                # Check if we haven't already logged this absence
-                recent_absence = any(
-                    e['type'] == 'face_absent' and 
-                    (current_time - e['timestamp']) < 5.0
-                    for e in self.events
-                )
-                if not recent_absence:
+                # To prevent logging this event repeatedly, we check if the last event was also a face_absent one.
+                # This ensures we only log it once per continuous absence period.
+                if not self.events or self.events[-1].get('type') != 'face_absent':
                     self.events.append({
                         'type': 'face_absent',
                         'timestamp': self.face_absent_start,
                         'severity': 'critical',
-                        'message': f'No face detected for {self.FACE_ABSENT_THRESHOLD} seconds'
+                        'message': f'No face detected for {self.FACE_ABSENT_THRESHOLD:.1f} seconds'
                     })
         else:
+            # Face is present again, so reset the timer
             self.face_absent_start = None
-        
-        # Multiple faces tracking
+
+        # --- Multiple Faces Tracking ---
         if face_info['multiple_faces']:
-            recent_multiple = any(
-                e['type'] == 'multiple_faces' and 
-                (current_time - e['timestamp']) < 5.0
-                for e in self.events
-            )
-            if not recent_multiple:
-                self.events.append({
+            # Log this event only if the previous event wasn't the same, to avoid spamming the log.
+            if not self.events or self.events[-1].get('type') != 'multiple_faces':
+                 self.events.append({
                     'type': 'multiple_faces',
                     'timestamp': current_time,
                     'severity': 'critical',
                     'message': f'Multiple faces detected ({face_info["face_count"]})'
                 })
         
-        # Focus tracking
-        if not face_info['is_focused'] and face_info['has_face']:
-            if self.focus_lost_start is None:
-                self.focus_lost_start = current_time
-            elif (current_time - self.focus_lost_start) > self.FOCUS_LOST_THRESHOLD:
-                recent_focus_lost = any(
-                    e['type'] == 'focus_lost' and 
-                    (current_time - e['timestamp']) < 5.0
-                    for e in self.events
-                )
-                if not recent_focus_lost:
-                    self.events.append({
-                        'type': 'focus_lost',
-                        'timestamp': self.focus_lost_start,
-                        'severity': 'warning',
-                        'message': f'User not looking at screen for {self.FOCUS_LOST_THRESHOLD} seconds'
-                    })
+        # --- Focus Tracking (only if a single face is present) ---
+        if face_info['has_face'] and not face_info['multiple_faces']:
+            if not face_info['is_focused']:
+                if self.focus_lost_start is None:
+                    # This is the moment focus was first lost
+                    self.focus_lost_start = current_time
+                
+                # Check if the lack of focus has crossed the threshold
+                elif (current_time - self.focus_lost_start) > self.FOCUS_LOST_THRESHOLD:
+                    if not self.events or self.events[-1].get('type') != 'focus_lost':
+                        self.events.append({
+                            'type': 'focus_lost',
+                            'timestamp': self.focus_lost_start,
+                            'severity': 'warning',
+                            'message': f'User not looking at screen for {self.FOCUS_LOST_THRESHOLD:.1f} seconds'
+                        })
+            else:
+                # User is focused, so reset the timer
+                self.focus_lost_start = None
         else:
+            # If there's no face or multiple faces, we can consider focus "lost" but
+            # it's better to just reset the timer to avoid conflicting events.
             self.focus_lost_start = None
-    
     # def process_video(self, video_path: str) -> Dict[str, Any]:
     #     """Process the entire video and return analysis results"""
     #     print(f"Processing video: {video_path}")
