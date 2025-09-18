@@ -53,7 +53,7 @@ const CandidateInterface = () => {
 
       try {
         toast({ title: "Uploading recording..." });
-        const response = await fetch("http://localhost:8000/upload", {
+        const response = await fetch("https://tutedude-assignment-r8jp.onrender.com/upload", {
           method: "POST",
           body: formData,
         });

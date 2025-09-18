@@ -92,7 +92,7 @@ const ProctorInterface = () => {
           const file = new File([blob], `session-${Date.now()}.webm`, { type: 'video/webm' });
           const form = new FormData();
           form.append('file', file);
-          const response = await fetch('http://localhost:8000/upload', { method: 'POST', body: form });
+          const response = await fetch('https://tutedude-assignment-r8jp.onrender.com/upload', { method: 'POST', body: form });
           const result = await response.json();
           console.log('Upload result:', result.analysis_complete);
           // const cloudinary_url =  "https://res.cloudinary.com/dzhwkg2io/video/upload/v1758197723/interview_videos/session-1758194332267.webm";
@@ -161,7 +161,7 @@ const ProctorInterface = () => {
 
   const fetchAnalysisResults = async (filename: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/analysis/${filename}`);
+      const response = await fetch(`https://tutedude-assignment-r8jp.onrender.com/analysis/${filename}`);
       if (response.ok) {
         const data = await response.json();
         console.log('Analysis Results:', data);
