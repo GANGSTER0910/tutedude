@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 import numpy as np
+from collections import Counter
 
 # YOLO imports
 try:
@@ -125,37 +126,6 @@ class VideoProctoringAnalyzer:
                 'timestamp': self.current_frame / self.fps
             }
     
-    # def update_object_tracking(self, detections: List[Dict[str, Any]]):
-    #     """Track persistent object detections"""
-    #     current_time = self.current_frame / self.fps
-        
-    #     # Update existing detections
-    #     for obj_type in list(self.object_detections.keys()):
-    #         self.object_detections[obj_type]['last_seen'] = current_time
-        
-    #     # Add new detections
-    #     for detection in detections:
-    #         obj_type = detection['class']
-    #         if obj_type not in self.object_detections:
-    #             self.object_detections[obj_type] = {
-    #                 'first_seen': current_time,
-    #                 'last_seen': current_time,
-    #                 'alerted': False
-    #             }
-    #         else:
-    #             self.object_detections[obj_type]['last_seen'] = current_time
-        
-    #     # Check for persistent objects that should trigger alerts
-    #     for obj_type, info in self.object_detections.items():
-    #         if not info['alerted'] and (current_time - info['first_seen']) > 1.0:  # 1 second
-    #             self.events.append({
-    #                 'type': f'{obj_type.replace(" ", "_")}_detected',
-    #                 'timestamp': info['first_seen'],
-    #                 'severity': 'critical',
-    #                 'message': f'{obj_type.title()} detected in frame',
-    #                 'confidence': max([d['confidence'] for d in detections if d['class'] == obj_type])
-    #             })
-    #             info['alerted'] = True
     def update_object_tracking(self, detections: List[Dict[str, Any]]):
         """Track persistent object detections more robustly"""
         current_time = self.current_frame / self.fps
@@ -196,9 +166,6 @@ class VideoProctoringAnalyzer:
                 })
                 info['alerted'] = True
         
-        # --- Optional Cleanup ---
-        # To prevent the dictionary from growing forever, you can remove objects
-        # that have not been seen for a long time (e.g., 5 seconds).
         objects_to_remove = []
         for obj_type, info in self.object_detections.items():
             if (current_time - info['last_seen']) > 5.0:
@@ -206,79 +173,16 @@ class VideoProctoringAnalyzer:
         
         for obj_type in objects_to_remove:
             del self.object_detections[obj_type]
-    # def update_face_tracking(self, face_info: Dict[str, Any]):
-    #     """Track face presence and focus over time"""
-    #     current_time = face_info['timestamp']
-        
-    #     # Face absent tracking
-    #     if not face_info['has_face']:
-    #         if self.face_absent_start is None:
-    #             self.face_absent_start = current_time
-    #         elif (current_time - self.face_absent_start) > self.FACE_ABSENT_THRESHOLD:
-    #             # Check if we haven't already logged this absence
-    #             recent_absence = any(
-    #                 e['type'] == 'face_absent' and 
-    #                 (current_time - e['timestamp']) < 5.0
-    #                 for e in self.events
-    #             )
-    #             if not recent_absence:
-    #                 self.events.append({
-    #                     'type': 'face_absent',
-    #                     'timestamp': self.face_absent_start,
-    #                     'severity': 'critical',
-    #                     'message': f'No face detected for {self.FACE_ABSENT_THRESHOLD} seconds'
-    #                 })
-    #     else:
-    #         self.face_absent_start = None
-        
-    #     # Multiple faces tracking
-    #     if face_info['multiple_faces']:
-    #         recent_multiple = any(
-    #             e['type'] == 'multiple_faces' and 
-    #             (current_time - e['timestamp']) < 5.0
-    #             for e in self.events
-    #         )
-    #         if not recent_multiple:
-    #             self.events.append({
-    #                 'type': 'multiple_faces',
-    #                 'timestamp': current_time,
-    #                 'severity': 'critical',
-    #                 'message': f'Multiple faces detected ({face_info["face_count"]})'
-    #             })
-        
-    #     # Focus tracking
-    #     if not face_info['is_focused'] and face_info['has_face']:
-    #         if self.focus_lost_start is None:
-    #             self.focus_lost_start = current_time
-    #         elif (current_time - self.focus_lost_start) > self.FOCUS_LOST_THRESHOLD:
-    #             recent_focus_lost = any(
-    #                 e['type'] == 'focus_lost' and 
-    #                 (current_time - e['timestamp']) < 5.0
-    #                 for e in self.events
-    #             )
-    #             if not recent_focus_lost:
-    #                 self.events.append({
-    #                     'type': 'focus_lost',
-    #                     'timestamp': self.focus_lost_start,
-    #                     'severity': 'warning',
-    #                     'message': f'User not looking at screen for {self.FOCUS_LOST_THRESHOLD} seconds'
-    #                 })
-    #     else:
-    #         self.focus_lost_start = None
+    
     def update_face_tracking(self, face_info: Dict[str, Any]):
         """Track face presence and focus over time with improved state management."""
         current_time = face_info['timestamp']
         
-        # --- Face Absent Tracking ---
         if not face_info['has_face']:
             if self.face_absent_start is None:
-                # This is the moment the face was first lost
                 self.face_absent_start = current_time
             
-            # Check if the absence has crossed the threshold
             elif (current_time - self.face_absent_start) > self.FACE_ABSENT_THRESHOLD:
-                # To prevent logging this event repeatedly, we check if the last event was also a face_absent one.
-                # This ensures we only log it once per continuous absence period.
                 if not self.events or self.events[-1].get('type') != 'face_absent':
                     self.events.append({
                         'type': 'face_absent',
@@ -287,12 +191,9 @@ class VideoProctoringAnalyzer:
                         'message': f'No face detected for {self.FACE_ABSENT_THRESHOLD:.1f} seconds'
                     })
         else:
-            # Face is present again, so reset the timer
             self.face_absent_start = None
 
-        # --- Multiple Faces Tracking ---
         if face_info['multiple_faces']:
-            # Log this event only if the previous event wasn't the same, to avoid spamming the log.
             if not self.events or self.events[-1].get('type') != 'multiple_faces':
                  self.events.append({
                     'type': 'multiple_faces',
@@ -301,14 +202,11 @@ class VideoProctoringAnalyzer:
                     'message': f'Multiple faces detected ({face_info["face_count"]})'
                 })
         
-        # --- Focus Tracking (only if a single face is present) ---
         if face_info['has_face'] and not face_info['multiple_faces']:
             if not face_info['is_focused']:
                 if self.focus_lost_start is None:
-                    # This is the moment focus was first lost
                     self.focus_lost_start = current_time
                 
-                # Check if the lack of focus has crossed the threshold
                 elif (current_time - self.focus_lost_start) > self.FOCUS_LOST_THRESHOLD:
                     if not self.events or self.events[-1].get('type') != 'focus_lost':
                         self.events.append({
@@ -318,74 +216,64 @@ class VideoProctoringAnalyzer:
                             'message': f'User not looking at screen for {self.FOCUS_LOST_THRESHOLD:.1f} seconds'
                         })
             else:
-                # User is focused, so reset the timer
                 self.focus_lost_start = None
         else:
-            # If there's no face or multiple faces, we can consider focus "lost" but
-            # it's better to just reset the timer to avoid conflicting events.
             self.focus_lost_start = None
-    # def process_video(self, video_path: str) -> Dict[str, Any]:
-    #     """Process the entire video and return analysis results"""
-    #     print(f"Processing video: {video_path}")
+    
+    @staticmethod
+    def generate_integrity_report(events: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Analyzes a list of events to calculate an integrity score and detailed summary.
+        """
+        penalty_scores = {
+            'face_absent': 10,
+            'multiple_faces': 20,
+            'focus_lost': 5,
+            'cell_phone_detected': 15,
+            'book_detected': 10,
+            'laptop_detected': 10,
+            'paper_detected': 10,  # Assuming paper is a type of note
+        }
+
+        event_types = [event['type'] for event in events]
+        event_counts = Counter(event_types)
+
+        initial_score = 100
+        total_deductions = 0
         
-    #     cap = cv2.VideoCapture(video_path)
-    #     if not cap.isOpened():
-    #         raise ValueError(f"Could not open video: {video_path}")
-        
-    #     # Get video properties
-    #     self.fps = cap.get(cv2.CAP_PROP_FPS)
-    #     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    #     duration = total_frames / self.fps
-        
-    #     print(f"Video properties: {total_frames} frames, {self.fps:.2f} FPS, {duration:.2f}s duration")
-        
-    #     # Process every 10th frame for performance (3 FPS analysis)
-    #     frame_skip = 1
-        
-    #     while True:
-    #         ret, frame = cap.read()
-    #         if not ret:
-    #             break
+        deductions_summary = []
+
+        for event_type, count in event_counts.items():
+            penalty = penalty_scores.get(event_type, 0)
+            deduction = penalty * count
+            total_deductions += deduction
             
-    #         if self.current_frame % frame_skip == 0:
-    #             # Object detection
-    #             object_detections = self.detect_objects(frame)
-    #             self.update_object_tracking(object_detections)
-                
-    #             # Face and focus detection
-    #             face_info = self.detect_faces_and_focus(frame)
-    #             self.update_face_tracking(face_info)
-            
-    #         self.current_frame += 1
-            
-    #         # Progress indicator
-    #         if self.current_frame % (frame_skip * 30) == 0:  # Every 10 seconds
-    #             progress = (self.current_frame / total_frames) * 100
-    #             print(f"Progress: {progress:.1f}%")
+            if deduction > 0:
+                deductions_summary.append(
+                    f"Lost {deduction} points for {count} instance(s) of '{event_type.replace('_', ' ')}'."
+                )
+
+        final_score = max(0, initial_score - total_deductions)
+
+        readable_summary = {
+            "Number of times focus lost": event_counts.get('focus_lost', 0),
+            "Number of times face was absent": event_counts.get('face_absent', 0),
+            "Number of times multiple faces were detected": event_counts.get('multiple_faces', 0),
+            "Suspicious items detected": {
+                item.replace('_detected', '').replace('_', ' ').title(): event_counts.get(item, 0)
+                for item in penalty_scores if 'detected' in item and event_counts.get(item, 0) > 0
+            }
+        }
+
+        # 5. Assemble the final integrity report section
+        integrity_report = {
+            'final_integrity_score': final_score,
+            'summary_details': readable_summary,
+            'deductions_breakdown': deductions_summary
+        }
         
-    #     cap.release()
-        
-    #     # Generate final report
-    #     report = {
-    #         'video_info': {
-    #             'path': video_path,
-    #             'duration_seconds': duration,
-    #             'total_frames': total_frames,
-    #             'fps': self.fps,
-    #             'processed_at': datetime.now().isoformat()
-    #         },
-    #         'events': sorted(self.events, key=lambda x: x['timestamp']),
-    #         'summary': {
-    #             'total_events': len(self.events),
-    #             'critical_events': len([e for e in self.events if e['severity'] == 'critical']),
-    #             'warning_events': len([e for e in self.events if e['severity'] == 'warning']),
-    #             'object_detections': len([e for e in self.events if 'detected' in e['type']]),
-    #             'face_events': len([e for e in self.events if 'face' in e['type']]),
-    #             'focus_events': len([e for e in self.events if 'focus' in e['type']])
-    #         }
-    #     }
-        
-    #     return report
+        return integrity_report
+    
     def process_video(self, video_path: str) -> Dict[str, Any]:
         """Process the entire video and return analysis results"""
         print(f"Processing video: {video_path}")
@@ -394,7 +282,6 @@ class VideoProctoringAnalyzer:
         if not cap.isOpened():
             raise ValueError(f"Could not open video: {video_path}")
         
-        # Get video properties, but with a fallback
         self.fps = 5.0
         if self.fps is None or self.fps == 0:
             print("Warning: Could not determine video FPS. Defaulting to 30.")
@@ -402,7 +289,6 @@ class VideoProctoringAnalyzer:
 
         print(f"Video properties: Reading with FPS set to {self.fps:.2f}")
         
-        # Process every frame for now, you can adjust frame_skip later
         frame_skip = 1
         
         frames_processed = 0
@@ -424,26 +310,24 @@ class VideoProctoringAnalyzer:
             self.current_frame += 1
             frames_processed += 1 # Keep track of frames we've actually seen
             
-            # Progress indicator
-            # This part needs to be removed as total_frames is unreliable
-            # if self.current_frame % (frame_skip * 30) == 0:
-            #     progress = (self.current_frame / total_frames) * 100
-            #     print(f"Progress: {progress:.1f}%")
-        
-        # Calculate duration based on frames we actually processed
         duration = frames_processed / self.fps
         cap.release()
         
-        # Generate final report
+        sorted_events = sorted(self.events, key=lambda x: x['timestamp'])
+        
+        integrity_analysis = self.generate_integrity_report(sorted_events)
+
         report = {
             'video_info': {
                 'path': video_path,
                 'duration_seconds': duration,
-                'total_frames': frames_processed, # Use the actual count
+                'total_frames': frames_processed,
                 'fps': self.fps,
                 'processed_at': datetime.now().isoformat()
             },
-            'events': sorted(self.events, key=lambda x: x['timestamp']),
+            'integrity_analysis': integrity_analysis,
+            
+            'events': sorted_events,
             'summary': {
                 'total_events': len(self.events),
                 'critical_events': len([e for e in self.events if e['severity'] == 'critical']),
@@ -455,6 +339,8 @@ class VideoProctoringAnalyzer:
         }
         
         return report
+
+    
 def main():
     if len(sys.argv) != 2:
         print("Usage: python video_processor.py <video_path>")

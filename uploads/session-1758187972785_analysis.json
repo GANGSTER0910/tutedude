@@ -1,0 +1,181 @@
+{
+  "video_info": {
+    "path": "uploads\\session-1758187972785.webm",
+    "duration_seconds": 226.4,
+    "total_frames": 1132,
+    "fps": 5.0,
+    "processed_at": "2025-09-18T15:04:22.106590"
+  },
+  "integrity_analysis": {
+    "final_integrity_score": 0,
+    "summary_details": {
+      "Number of times focus lost": 6,
+      "Number of times face was absent": 4,
+      "Number of times multiple faces were detected": 0,
+      "Suspicious items detected": {
+        "Cell Phone": 7,
+        "Laptop": 5
+      }
+    },
+    "deductions_breakdown": [
+      "Lost 50 points for 5 instance(s) of 'laptop detected'.",
+      "Lost 105 points for 7 instance(s) of 'cell phone detected'.",
+      "Lost 30 points for 6 instance(s) of 'focus lost'.",
+      "Lost 40 points for 4 instance(s) of 'face absent'."
+    ]
+  },
+  "events": [
+    {
+      "type": "laptop_detected",
+      "timestamp": 0.0,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.5020301342010498
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 1.0,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.511926531791687
+    },
+    {
+      "type": "focus_lost",
+      "timestamp": 25.2,
+      "severity": "warning",
+      "message": "User not looking at screen for 2.0 seconds"
+    },
+    {
+      "type": "focus_lost",
+      "timestamp": 25.2,
+      "severity": "warning",
+      "message": "User not looking at screen for 2.0 seconds"
+    },
+    {
+      "type": "focus_lost",
+      "timestamp": 25.2,
+      "severity": "warning",
+      "message": "User not looking at screen for 2.0 seconds"
+    },
+    {
+      "type": "focus_lost",
+      "timestamp": 25.2,
+      "severity": "warning",
+      "message": "User not looking at screen for 2.0 seconds"
+    },
+    {
+      "type": "focus_lost",
+      "timestamp": 25.2,
+      "severity": "warning",
+      "message": "User not looking at screen for 2.0 seconds"
+    },
+    {
+      "type": "focus_lost",
+      "timestamp": 25.2,
+      "severity": "warning",
+      "message": "User not looking at screen for 2.0 seconds"
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 26.4,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.3658243417739868
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 36.4,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.3424050807952881
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 61.2,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.5602566599845886
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 88.8,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.5681093335151672
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 102.6,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.464760422706604
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 114.4,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.3783729374408722
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 122.0,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.4799269139766693
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 132.6,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 132.6,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 135.2,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.7923158407211304
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 175.0,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.4107493758201599
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 181.6,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 184.4,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.81276535987854
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 185.2,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    }
+  ],
+  "summary": {
+    "total_events": 22,
+    "critical_events": 16,
+    "warning_events": 6,
+    "object_detections": 12,
+    "face_events": 4,
+    "focus_events": 6
+  }
+}

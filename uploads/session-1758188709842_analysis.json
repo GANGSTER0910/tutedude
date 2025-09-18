@@ -1,0 +1,135 @@
+{
+  "video_info": {
+    "path": "uploads\\session-1758188709842.webm",
+    "duration_seconds": 207.2,
+    "total_frames": 1036,
+    "fps": 5.0,
+    "processed_at": "2025-09-18T15:16:41.028715"
+  },
+  "integrity_analysis": {
+    "final_integrity_score": 0,
+    "summary_details": {
+      "Number of times focus lost": 0,
+      "Number of times face was absent": 4,
+      "Number of times multiple faces were detected": 5,
+      "Suspicious items detected": {
+        "Cell Phone": 1,
+        "Book": 1,
+        "Laptop": 4
+      }
+    },
+    "deductions_breakdown": [
+      "Lost 40 points for 4 instance(s) of 'face absent'.",
+      "Lost 40 points for 4 instance(s) of 'laptop detected'.",
+      "Lost 15 points for 1 instance(s) of 'cell phone detected'.",
+      "Lost 10 points for 1 instance(s) of 'book detected'.",
+      "Lost 100 points for 5 instance(s) of 'multiple faces'."
+    ]
+  },
+  "events": [
+    {
+      "type": "face_absent",
+      "timestamp": 10.0,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 54.8,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.8653967976570129
+    },
+    {
+      "type": "cell_phone_detected",
+      "timestamp": 55.6,
+      "severity": "critical",
+      "message": "Cell Phone detected in frame",
+      "confidence": 0.2846616506576538
+    },
+    {
+      "type": "book_detected",
+      "timestamp": 55.8,
+      "severity": "critical",
+      "message": "Book detected in frame",
+      "confidence": 0.2957006096839905
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 72.8,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "multiple_faces",
+      "timestamp": 91.6,
+      "severity": "critical",
+      "message": "Multiple faces detected (2)"
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 92.2,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "multiple_faces",
+      "timestamp": 109.4,
+      "severity": "critical",
+      "message": "Multiple faces detected (2)"
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 111.6,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.4636040925979614
+    },
+    {
+      "type": "multiple_faces",
+      "timestamp": 116.0,
+      "severity": "critical",
+      "message": "Multiple faces detected (2)"
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 156.2,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.2690344452857971
+    },
+    {
+      "type": "face_absent",
+      "timestamp": 165.2,
+      "severity": "critical",
+      "message": "No face detected for 3.0 seconds"
+    },
+    {
+      "type": "multiple_faces",
+      "timestamp": 169.8,
+      "severity": "critical",
+      "message": "Multiple faces detected (2)"
+    },
+    {
+      "type": "laptop_detected",
+      "timestamp": 200.6,
+      "severity": "critical",
+      "message": "Laptop detected in frame",
+      "confidence": 0.49478501081466675
+    },
+    {
+      "type": "multiple_faces",
+      "timestamp": 203.8,
+      "severity": "critical",
+      "message": "Multiple faces detected (2)"
+    }
+  ],
+  "summary": {
+    "total_events": 15,
+    "critical_events": 15,
+    "warning_events": 0,
+    "object_detections": 6,
+    "face_events": 9,
+    "focus_events": 0
+  }
+}
