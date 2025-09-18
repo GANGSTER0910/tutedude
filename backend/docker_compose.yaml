@@ -1,0 +1,20 @@
+# version: '3.8'
+
+services:
+  tutedude_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tutedude_container
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=${DATABASE_LINK}
+    volumes:
+      - .:/backend
+    networks:
+      - tutedude_network
+
+networks:
+  tutedude_network:
+    driver: bridge

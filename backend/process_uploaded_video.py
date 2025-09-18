@@ -5,7 +5,6 @@ Process the most recently uploaded video file
 
 import os
 import sys
-import glob
 from pathlib import Path
 
 def find_latest_video():

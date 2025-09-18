@@ -2,8 +2,6 @@ import asyncio
 from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from aiortc import RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaBlackhole
 import os
 from typing import Dict, Any
 from dotenv import load_dotenv
@@ -81,11 +79,7 @@ async def candidate_get_answer():
         return JSONResponse(answer)
     return JSONResponse({"error": "No interviewer answer available"})
 
-@app.on_event("shutdown")
-async def on_shutdown():
-    coroutines = [pc.close() for pc in list(peer_connections)]
-    await asyncio.gather(*coroutines)
-    peer_connections.clear()
+
 
 # @app.post("/upload")
 # async def upload_video(file: UploadFile = File(...)):
