@@ -6,6 +6,8 @@ import os
 from typing import Dict, Any
 from dotenv import load_dotenv
 from pymongo import MongoClient
+import cloudinary
+import cloudinary.uploader
 load_dotenv()
 app = FastAPI()
 
@@ -20,6 +22,11 @@ app.add_middleware(
 # Two-role signaling: Candidate and Interviewer
 interview_room: Dict[str, Any] = {}
 DATABASE_LINK = os.getenv("DATABASE_LINK")
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+)
 if not DATABASE_LINK:
     raise ValueError("DATABASE_LINK environment variable not set!")
 
@@ -125,71 +132,151 @@ async def candidate_get_answer():
 #             "error": str(e)
 #         }
 
+# from tempfile import NamedTemporaryFile
+# import json
+# import time
+
+# @app.post("/upload")
+# async def upload_video(file: UploadFile = File(...)):
+#     try:
+#         # Create a temporary file to process locally if needed
+#         with NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
+#             while True:
+#                 chunk = await file.read(1024 * 1024)
+#                 if not chunk:
+#                     break
+#                 temp_file.write(chunk)
+#             temp_file_path = temp_file.name  # Path to temp file
+
+#         # Upload to Cloudinary
+#         cloudinary_response = cloudinary.uploader.upload(
+#             temp_file_path,
+#             resource_type="video",  # VERY IMPORTANT for non-image uploads
+#             folder="interview_videos",  # Optional: keep files organized
+#             public_id=os.path.splitext(file.filename)[0],  # Optional: use original filename
+#             overwrite=True
+#         )
+
+#         cloudinary_url = cloudinary_response.get("secure_url")
+#         if not cloudinary_url:
+#             raise ValueError("Failed to get Cloudinary URL after upload")
+
+#         # Prepare MongoDB document
+#         report_doc = {
+#             "video_file": file.filename,
+#             "video_url": cloudinary_url,
+#             "created_at": time.time(),
+#             "analysis_complete": False,
+#             "analysis_file": None,
+#             "analysis_data": None,
+#         }
+
+#         # Run analysis on local temp file
+#         try:
+#             from video_processor import VideoProctoringAnalyzer
+#             analyzer = VideoProctoringAnalyzer()
+#             report = analyzer.process_video(temp_file_path)
+
+#             # Save analysis results locally (optional)
+#             analysis_path = temp_file_path.replace(os.path.splitext(temp_file_path)[1], '_analysis.json')
+#             with open(analysis_path, 'w') as f:
+#                 json.dump(report, f, indent=2)
+
+#             # Update doc
+#             report_doc.update({
+#                 "analysis_complete": True,
+#                 "analysis_file": os.path.basename(analysis_path),
+#                 "analysis_data": report
+#             })
+#         except Exception as e:
+#             print(f"Error processing video: {e}")
+#             report_doc["error"] = str(e)
+
+#         # Save to MongoDB
+#         if sessions_collection is not None:
+#             try:
+#                 sessions_collection.insert_one(report_doc)
+#                 print("✅ Report inserted into MongoDB")
+#             except Exception as db_error:
+#                 print(f"❌ Failed to insert report in DB: {db_error}")
+
+#         return {
+#             "status": "ok",
+#             "cloudinary_url": cloudinary_url,
+#             "analysis_complete": report_doc["analysis_complete"],
+#             "analysis_file": report_doc["analysis_file"],
+#         }
+
+#     finally:
+#         # Clean up local temp file
+#         try:
+#             os.remove(temp_file_path)
+#         except Exception:
+#             pass
+
+import time
+import cloudinary.uploader
+
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
-    os.makedirs("uploads", exist_ok=True)
-    dest_path = os.path.join("uploads", file.filename)
-
-    # If filename exists, append a counter
-    base, ext = os.path.splitext(dest_path)
-    counter = 1
-    while os.path.exists(dest_path):
-        dest_path = f"{base}_{counter}{ext}"
-        counter += 1
-
-    with open(dest_path, "wb") as out:
-        while True:
-            chunk = await file.read(1024 * 1024)
-            if not chunk:
-                break
-            out.write(chunk)
-
-    # Prepare document to insert in DB
-    report_doc = {
-        "video_file": os.path.basename(dest_path),
-        "video_path": dest_path.replace("\\", "/"),
-        "created_at": __import__("time").time(),
-        "analysis_complete": False,
-        "analysis_file": None,
-        "analysis_data": None,
-    }
-
-    # Automatically process the video after upload
     try:
-        from video_processor import VideoProctoringAnalyzer
-        analyzer = VideoProctoringAnalyzer()
-        report = analyzer.process_video(dest_path)
+        # 1️⃣ Upload directly to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            file.file,
+            resource_type="video",
+            folder="interview_videos",
+            public_id=os.path.splitext(file.filename)[0],
+            overwrite=True
+        )
 
-        # Save analysis results locally (optional)
-        analysis_path = dest_path.replace('.webm', '_analysis.json')
-        import json
-        with open(analysis_path, 'w') as f:
-            json.dump(report, f, indent=2)
+        cloudinary_url = upload_result.get("secure_url")
+        if not cloudinary_url:
+            raise ValueError("Cloudinary upload failed, no URL returned.")
 
-        # Update document before saving
-        report_doc.update({
-            "analysis_complete": True,
-            "analysis_file": os.path.basename(analysis_path),
-            "analysis_data": report
-        })
-    except Exception as e:
-        print(f"Error processing video: {e}")
-        report_doc["error"] = str(e)
+        # 2️⃣ Prepare MongoDB document
+        report_doc = {
+            "video_file": file.filename,
+            "video_url": cloudinary_url,
+            "created_at": time.time(),
+            "analysis_complete": False,
+            "analysis_data": None,
+        }
 
-    # Save to MongoDB
-    if sessions_collection is not None:
+        # 3️⃣ Process video directly from Cloudinary URL
         try:
-            sessions_collection.insert_one(report_doc)
-            print("✅ Report inserted into MongoDB")
-        except Exception as db_error:
-            print(f"❌ Failed to insert report in DB: {db_error}")
+            from video_processor import VideoProctoringAnalyzer
+            analyzer = VideoProctoringAnalyzer()
 
-    return {
-        "status": "ok",
-        "path": report_doc["video_path"],
-        "analysis_complete": report_doc["analysis_complete"],
-        "analysis_path": report_doc["analysis_file"],
-    }
+            # IMPORTANT: Pass URL instead of local path
+            report = analyzer.process_video(cloudinary_url)
+
+            report_doc.update({
+                "analysis_complete": True,
+                "analysis_data": report
+            })
+        except Exception as e:
+            print(f"⚠️ Error processing video: {e}")
+            report_doc["error"] = str(e)
+
+        # 4️⃣ Save report to MongoDB
+        if sessions_collection is not None:
+            try:
+                sessions_collection.insert_one(report_doc)
+                print("✅ Report inserted into MongoDB")
+            except Exception as db_error:
+                print(f"❌ Failed to insert report in DB: {db_error}")
+
+        # 5️⃣ Return result
+        return {
+            "status": "ok",
+            "cloudinary_url": cloudinary_url,
+            "analysis_complete": report_doc["analysis_complete"],
+            "analysis_data": report_doc["analysis_data"],  # optional
+        }
+
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 
 # @app.get("/analysis/{filename}")
 # async def get_analysis(filename: str):
@@ -254,6 +341,9 @@ async def list_reports():
     try:
         docs = sessions_collection.find().sort("created_at", -1)
         reports = [serialize_mongo_document(doc) for doc in docs]
+        for r in reports:
+            if "video_url" in r:
+                r["video"] = r.pop("video_url")
         return JSONResponse({"reports": reports})
     except Exception as e:
         return JSONResponse({"error": f"Failed to fetch reports: {str(e)}"}, status_code=500)

@@ -94,14 +94,16 @@ const ProctorInterface = () => {
           form.append('file', file);
           const response = await fetch('http://localhost:8000/upload', { method: 'POST', body: form });
           const result = await response.json();
-          
+          console.log('Upload result:', result.analysis_complete);
+          // const cloudinary_url =  "https://res.cloudinary.com/dzhwkg2io/video/upload/v1758197723/interview_videos/session-1758194332267.webm";
+          // console.log();
           if (result.analysis_complete) {
             toast({ 
               title: 'Analysis Complete', 
               description: 'Video uploaded and analyzed successfully. Report is ready.' 
             });
             // Fetch the analysis results
-            await fetchAnalysisResults(result.path.split('/').pop());
+            await fetchAnalysisResults(result.cloudinary_url.split('/').pop());
           } else {
             toast({ 
               title: 'Upload Complete', 
@@ -162,7 +164,8 @@ const ProctorInterface = () => {
       const response = await fetch(`http://localhost:8000/analysis/${filename}`);
       if (response.ok) {
         const data = await response.json();
-        setAnalysisData(data);
+        console.log('Analysis Results:', data);
+        setAnalysisData(data.analysis_data);
       } else {
         console.error('Failed to fetch analysis results');
       }
@@ -170,189 +173,205 @@ const ProctorInterface = () => {
       console.error('Error fetching analysis results:', error);
     }
   };
+  const getSessionDuration = () => {
+  if (!sessionStartTime) return "00:00:00";
+  const now = new Date();
+  const diff = now.getTime() - sessionStartTime.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
 
   const generatePDFReport = async () => {
-  setIsGeneratingReport(true);
+    setIsGeneratingReport(true);
 
-  try {
-    // Dynamic imports for PDF generation libraries
-    const { jsPDF } = await import("jspdf");
-    const { default: autoTable } = await import("jspdf-autotable");
+    try {
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 20;
-    let yPosition = 0; // We will manage this carefully
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      let yPosition = margin;
 
-    // --- 1. Main Header ---
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("Proctoring Session Report", pageWidth / 2, margin, { align: "center" });
-    yPosition = margin + 10;
-    doc.setLineWidth(0.5);
-    doc.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += 15;
-
-    if (!analysisData || !analysisData.integrity_analysis) {
-      doc.text("No AI analysis data available for this session.", 20, yPosition);
-      doc.save("proctoring-report-incomplete.pdf");
-      setIsGeneratingReport(false);
-      return;
-    }
-
-    const { integrity_analysis, events } = analysisData;
-    const { final_integrity_score, summary_details, deductions_breakdown } = integrity_analysis;
-
-    // --- 2. Two-Column Layout ---
-    const leftColumnX = margin;
-    const rightColumnX = pageWidth / 2 + 10;
-    const initialY = yPosition;
-
-    // --- Left Column ---
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Session Details", leftColumnX, yPosition);
-    yPosition += 7;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Candidate: ${candidateName}`, leftColumnX, yPosition);
-    yPosition += 6;
-    doc.text(`Date: ${sessionStartTime?.toLocaleDateString() || "N/A"}`, leftColumnX, yPosition);
-    yPosition += 6;
-    doc.text(`Duration: ${getSessionDuration()}`, leftColumnX, yPosition);
-    yPosition += 12;
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Final Integrity Score", leftColumnX, yPosition);
-    yPosition += 12;
-
-    doc.setFontSize(36);
-    doc.setFont("helvetica", "bold");
-    // Set color based on score
-    if (final_integrity_score >= 80) doc.setTextColor("#28a745"); // Green
-    else if (final_integrity_score >= 60) doc.setTextColor("#ffc107"); // Yellow
-    else doc.setTextColor("#dc3545"); // Red
-    doc.text(`${final_integrity_score}`, leftColumnX, yPosition);
-    doc.setTextColor(0); // Reset color to black
-    
-    let leftColumnEndY = yPosition;
-
-    // --- Right Column ---
-    yPosition = initialY; // Reset Y for the right column
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Activity Summary", rightColumnX, yPosition);
-    yPosition += 7;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-
-    const summaryLines = [
-      `Focus lost: ${summary_details["Number of times focus lost"] || 0} time(s)`,
-      `Face absent: ${summary_details["Number of times face was absent"] || 0} time(s)`,
-      `Multiple faces detected: ${summary_details["Number of times multiple faces were detected"] || 0} time(s)`
-    ];
-    summaryLines.forEach(line => {
-      doc.text(line, rightColumnX, yPosition);
-      yPosition += 6;
-    });
-
-    // Handle suspicious items separately for better formatting
-    const suspiciousItems = summary_details["Suspicious items detected"];
-    if (Object.keys(suspiciousItems).length > 0) {
-      yPosition += 4;
+      // --- 1. Header ---
+      doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
-      doc.text("Suspicious Items:", rightColumnX, yPosition);
-      yPosition += 6;
+      doc.text("Proctoring Session Report", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 10;
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 15;
+      console.log('Analysis Data in PDF Generation:', analysisData.integrity_analysis);
+      if (!analysisData || !analysisData.integrity_analysis) {
+        doc.text("⚠ No AI analysis data available for this session.", margin, yPosition);
+        doc.save("proctoring-report-incomplete.pdf");
+        setIsGeneratingReport(false);
+        return;
+      }
+
+      const { integrity_analysis, events, video_info } = analysisData;
+      const { final_integrity_score, summary_details, deductions_breakdown } = integrity_analysis;
+
+      // --- 2. Left Column: Session Details ---
+      const leftColumnX = margin;
+      const rightColumnX = pageWidth / 2 + 10;
+      const initialY = yPosition;
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Session Details", leftColumnX, yPosition);
+      yPosition += 7;
+
+      doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      for (const [item, count] of Object.entries(suspiciousItems)) {
-        doc.text(`- ${item}: ${count} time(s)`, rightColumnX + 5, yPosition);
+      doc.text(`Candidate: ${candidateName || "N/A"}`, leftColumnX, yPosition);
+      yPosition += 6;
+      doc.text(`Date: ${sessionStartTime?.toLocaleDateString() || "N/A"}`, leftColumnX, yPosition);
+      yPosition += 6;
+      doc.text(`Duration: ${getSessionDuration?.() || "N/A"}`, leftColumnX, yPosition);
+      yPosition += 6;
+
+      // Add extra video metadata (no URL)
+      if (video_info) {
+        if (video_info.duration_seconds) {
+          doc.text(`Video Length: ${video_info.duration_seconds.toFixed(1)} sec`, leftColumnX, yPosition);
+          yPosition += 6;
+        }
+        if (video_info.total_frames) {
+          doc.text(`Frames Processed: ${video_info.total_frames}`, leftColumnX, yPosition);
+          yPosition += 6;
+        }
+        if (video_info.fps) {
+          doc.text(`FPS Used: ${video_info.fps}`, leftColumnX, yPosition);
+          yPosition += 6;
+        }
+        if (video_info.processed_at) {
+          doc.text(`Processed At: ${new Date(video_info.processed_at).toLocaleString()}`, leftColumnX, yPosition);
+          yPosition += 6;
+        }
+      }
+
+      yPosition += 6;
+      doc.setFont("helvetica", "bold");
+      doc.text("Final Integrity Score", leftColumnX, yPosition);
+      yPosition += 12;
+
+      doc.setFontSize(36);
+      if (final_integrity_score >= 80) doc.setTextColor("#28a745");
+      else if (final_integrity_score >= 60) doc.setTextColor("#ffc107");
+      else doc.setTextColor("#dc3545");
+      doc.text(`${final_integrity_score}`, leftColumnX, yPosition);
+      doc.setTextColor(0);
+      let leftColumnEndY = yPosition;
+
+      // --- 3. Right Column: Summary ---
+      yPosition = initialY;
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Activity Summary", rightColumnX, yPosition);
+      yPosition += 7;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+
+      for (const [key, value] of Object.entries(summary_details || {})) {
+        if (key === "Suspicious items detected") continue;
+        doc.text(`${key}: ${value}`, rightColumnX, yPosition);
         yPosition += 6;
       }
-    }
-    
-    let rightColumnEndY = yPosition;
 
-    // --- 3. Position the Event Log Table below the longest column ---
-    yPosition = Math.max(leftColumnEndY, rightColumnEndY) + 15;
-    doc.line(margin, yPosition - 5, pageWidth - margin, yPosition - 5); // Separator line
-    
-    if (events && events.length > 0) {
-      autoTable(doc, {
-        head: [["Timestamp", "Severity", "Event Description"]],
-        body: events.map((event: any) => [
-          `${event.timestamp?.toFixed(1)}s`,
-          event.severity?.toUpperCase() || "INFO",
-          event.message || "No message",
-        ]),
-        startY: yPosition,
-        theme: 'grid',
-        headStyles: { fillColor: [44, 62, 80] }, // Dark blue header
-        styles: { fontSize: 9, cellPadding: 2 },
-        // This will automatically add new pages if the table is too long
-      });
-    } else {
-      doc.text("No specific events were logged during this session.", margin, yPosition);
-    }
-    
-    // --- 4. Footer on every page (handled by autoTable's didDrawPage hook) ---
-    const footer = () => {
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(
-        `Report generated on ${new Date().toLocaleString()}`,
-        margin,
-        pageHeight - 10
-      );
-      doc.text(
-        "AI Proctoring System",
-        pageWidth - margin,
-        pageHeight - 10,
-        { align: "right" }
-      );
-    };
-
-    // Manually add footer to the first page
-    footer();
-    // For subsequent pages created by autoTable, use the hook
-    if (doc.internal.pages.length > 1) {
-      for (let i = 2; i <= doc.internal.pages.length; i++) {
-        doc.setPage(i);
-        footer();
+      const suspiciousItems = summary_details?.["Suspicious items detected"] || {};
+      if (Object.keys(suspiciousItems).length > 0) {
+        yPosition += 4;
+        doc.setFont("helvetica", "bold");
+        doc.text("Suspicious Items:", rightColumnX, yPosition);
+        yPosition += 6;
+        doc.setFont("helvetica", "normal");
+        for (const [item, count] of Object.entries(suspiciousItems)) {
+          doc.text(`- ${item}: ${count} time(s)`, rightColumnX + 5, yPosition);
+          yPosition += 6;
+        }
       }
+
+      let rightColumnEndY = yPosition;
+      yPosition = Math.max(leftColumnEndY, rightColumnEndY) + 15;
+
+      // --- 4. Deductions Breakdown ---
+      if (deductions_breakdown && deductions_breakdown.length > 0) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Deductions Breakdown", margin, yPosition);
+        yPosition += 6;
+        doc.setFont("helvetica", "normal");
+        deductions_breakdown.forEach((line: string) => {
+          doc.text(`• ${line}`, margin + 5, yPosition);
+          yPosition += 5;
+        });
+        yPosition += 10;
+      }
+
+      // --- 5. Event Log Table ---
+      if (events && events.length > 0) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Event Log", margin, yPosition - 5);
+
+        autoTable(doc, {
+          head: [["Timestamp", "Severity", "Message", "Confidence"]],
+          body: events.map((event: any) => [
+            `${event.timestamp?.toFixed(1)}s`,
+            event.severity?.toUpperCase() || "INFO",
+            event.message || "N/A",
+            event.confidence !== undefined ? `${(event.confidence * 100).toFixed(1)}%` : "—",
+          ]),
+          startY: yPosition,
+          theme: "grid",
+          headStyles: { fillColor: [44, 62, 80] },
+          styles: { fontSize: 9, cellPadding: 2 },
+        });
+      } else {
+        doc.text("No specific events were logged during this session.", margin, yPosition);
+      }
+
+      // --- 6. Footer ---
+      const footer = () => {
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Report generated on ${new Date().toLocaleString()}`, margin, pageHeight - 10);
+        doc.text("AI Proctoring System", pageWidth - margin, pageHeight - 10, { align: "right" });
+      };
+
+      footer();
+      if (doc.internal.pages.length > 1) {
+        for (let i = 2; i <= doc.internal.pages.length; i++) {
+          doc.setPage(i);
+          footer();
+        }
+      }
+
+      const filename = `proctoring-report-${candidateName?.replace(/\s+/g, "-") || "candidate"}-${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(filename);
+
+      toast({
+        title: "Report Generated",
+        description: `PDF report saved as ${filename}`,
+      });
+
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "PDF Generation Failed",
+        description: "Could not generate PDF report. Please check the console.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingReport(false);
     }
-
-
-    // --- Save the PDF ---
-    const filename = `proctoring-report-${candidateName.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
-    doc.save(filename);
-
-    toast({
-      title: "Report Generated",
-      description: `PDF report saved as ${filename}`,
-    });
-
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    toast({
-      title: "PDF Generation Failed",
-      description: "Could not generate PDF report. Please check the console.",
-      variant: "destructive",
-    });
-  } finally {
-    setIsGeneratingReport(false);
-  }
-};
-  const getSessionDuration = () => {
-    if (!sessionStartTime) return "00:00:00";
-    const now = new Date();
-    const diff = now.getTime() - sessionStartTime.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
+
+ 
 
   useEffect(() => {
     let interval: NodeJS.Timeout;

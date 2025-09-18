@@ -9,7 +9,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGO_URI=${DATABASE_LINK}
+      - DATABASE_LINK=${DATABASE_LINK}
+      - cloud_name=${CLOUDINARY_CLOUD_NAME}
+      - api_key=${CLOUDINARY_API_KEY}
+      - api_secret=${CLOUDINARY_API_SECRET}
     volumes:
       - .:/backend
     networks:
