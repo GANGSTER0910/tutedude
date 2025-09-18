@@ -33,8 +33,8 @@ except ImportError:
 class VideoProctoringAnalyzer:
     def __init__(self):
         # Initialize YOLO-11n model
-        print("Loading YOLO-11n model...")
-        self.yolo_model = YOLO('yolo11n.pt')
+        print("Loading YOLO-8m model...")
+        self.yolo_model = YOLO('yolov8m.pt')
         
         # Initialize MediaPipe Face Detection
         self.mp_face_detection = mp.solutions.face_detection
@@ -66,7 +66,7 @@ class VideoProctoringAnalyzer:
         self.CONFIDENCE_THRESHOLD = 0.2
         
     def detect_objects(self, frame: np.ndarray) -> List[Dict[str, Any]]:
-        """Detect objects using YOLO-11n"""
+        """Detect objects using YOLO-8n"""
         results = self.yolo_model(frame, verbose=False)
         detections = []
         
@@ -217,6 +217,68 @@ class VideoProctoringAnalyzer:
         else:
             self.focus_lost_start = None
     
+    # def process_video(self, video_path: str) -> Dict[str, Any]:
+    #     """Process the entire video and return analysis results"""
+    #     print(f"Processing video: {video_path}")
+        
+    #     cap = cv2.VideoCapture(video_path)
+    #     if not cap.isOpened():
+    #         raise ValueError(f"Could not open video: {video_path}")
+        
+    #     # Get video properties
+    #     self.fps = cap.get(cv2.CAP_PROP_FPS)
+    #     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    #     duration = total_frames / self.fps
+        
+    #     print(f"Video properties: {total_frames} frames, {self.fps:.2f} FPS, {duration:.2f}s duration")
+        
+    #     # Process every 10th frame for performance (3 FPS analysis)
+    #     frame_skip = 1
+        
+    #     while True:
+    #         ret, frame = cap.read()
+    #         if not ret:
+    #             break
+            
+    #         if self.current_frame % frame_skip == 0:
+    #             # Object detection
+    #             object_detections = self.detect_objects(frame)
+    #             self.update_object_tracking(object_detections)
+                
+    #             # Face and focus detection
+    #             face_info = self.detect_faces_and_focus(frame)
+    #             self.update_face_tracking(face_info)
+            
+    #         self.current_frame += 1
+            
+    #         # Progress indicator
+    #         if self.current_frame % (frame_skip * 30) == 0:  # Every 10 seconds
+    #             progress = (self.current_frame / total_frames) * 100
+    #             print(f"Progress: {progress:.1f}%")
+        
+    #     cap.release()
+        
+    #     # Generate final report
+    #     report = {
+    #         'video_info': {
+    #             'path': video_path,
+    #             'duration_seconds': duration,
+    #             'total_frames': total_frames,
+    #             'fps': self.fps,
+    #             'processed_at': datetime.now().isoformat()
+    #         },
+    #         'events': sorted(self.events, key=lambda x: x['timestamp']),
+    #         'summary': {
+    #             'total_events': len(self.events),
+    #             'critical_events': len([e for e in self.events if e['severity'] == 'critical']),
+    #             'warning_events': len([e for e in self.events if e['severity'] == 'warning']),
+    #             'object_detections': len([e for e in self.events if 'detected' in e['type']]),
+    #             'face_events': len([e for e in self.events if 'face' in e['type']]),
+    #             'focus_events': len([e for e in self.events if 'focus' in e['type']])
+    #         }
+    #     }
+        
+    #     return report
     def process_video(self, video_path: str) -> Dict[str, Any]:
         """Process the entire video and return analysis results"""
         print(f"Processing video: {video_path}")
@@ -225,21 +287,24 @@ class VideoProctoringAnalyzer:
         if not cap.isOpened():
             raise ValueError(f"Could not open video: {video_path}")
         
-        # Get video properties
-        self.fps = cap.get(cv2.CAP_PROP_FPS)
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        duration = total_frames / self.fps
+        # Get video properties, but with a fallback
+        self.fps = 5.0
+        if self.fps is None or self.fps == 0:
+            print("Warning: Could not determine video FPS. Defaulting to 30.")
+            self.fps = 30.0 # Default to a common value if FPS is not available
+
+        print(f"Video properties: Reading with FPS set to {self.fps:.2f}")
         
-        print(f"Video properties: {total_frames} frames, {self.fps:.2f} FPS, {duration:.2f}s duration")
-        
-        # Process every 10th frame for performance (3 FPS analysis)
+        # Process every frame for now, you can adjust frame_skip later
         frame_skip = 1
         
+        frames_processed = 0
         while True:
             ret, frame = cap.read()
             if not ret:
-                break
+                break # Exit the loop if there are no more frames
             
+            # Your existing processing logic
             if self.current_frame % frame_skip == 0:
                 # Object detection
                 object_detections = self.detect_objects(frame)
@@ -250,12 +315,16 @@ class VideoProctoringAnalyzer:
                 self.update_face_tracking(face_info)
             
             self.current_frame += 1
+            frames_processed += 1 # Keep track of frames we've actually seen
             
             # Progress indicator
-            if self.current_frame % (frame_skip * 30) == 0:  # Every 10 seconds
-                progress = (self.current_frame / total_frames) * 100
-                print(f"Progress: {progress:.1f}%")
+            # This part needs to be removed as total_frames is unreliable
+            # if self.current_frame % (frame_skip * 30) == 0:
+            #     progress = (self.current_frame / total_frames) * 100
+            #     print(f"Progress: {progress:.1f}%")
         
+        # Calculate duration based on frames we actually processed
+        duration = frames_processed / self.fps
         cap.release()
         
         # Generate final report
@@ -263,7 +332,7 @@ class VideoProctoringAnalyzer:
             'video_info': {
                 'path': video_path,
                 'duration_seconds': duration,
-                'total_frames': total_frames,
+                'total_frames': frames_processed, # Use the actual count
                 'fps': self.fps,
                 'processed_at': datetime.now().isoformat()
             },
@@ -279,7 +348,6 @@ class VideoProctoringAnalyzer:
         }
         
         return report
-
 def main():
     if len(sys.argv) != 2:
         print("Usage: python video_processor.py <video_path>")
